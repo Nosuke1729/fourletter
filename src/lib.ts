@@ -34,10 +34,19 @@ function assertDb() {
 }
 
 export async function fetchWords(): Promise<Word[]> {
-  if (!supabase) return starterWords
-  const { data, error } = await supabase.from('words').select('word,label,category,description,source_url').order('word')
-  if (error) throw error
-  return data?.length ? data : starterWords
+  const response = await fetch(`${import.meta.env.BASE_URL}catalog.json`)
+  if (!response.ok) throw new Error('辞書データを読み込めませんでした。')
+  const rows = await response.json() as [string, string, string, string, string][]
+  const catalog = new Map<string, Word>()
+  for (const [word, label, category, description, entry_id] of rows) {
+    catalog.set(word, {
+      word, label, category, description,
+      source_url: 'https://www.edrdg.org/wiki/JMdict-EDICT_Dictionary_Project.html',
+      source_name: 'JMdict', entry_id,
+    })
+  }
+  for (const word of starterWords) catalog.set(word.word, { ...word, source_name: '広辞苑の掲載例' })
+  return [...catalog.values()].sort((a, b) => a.word.localeCompare(b.word, 'ja'))
 }
 
 export async function fetchProfile(id: string): Promise<Profile | null> {
@@ -47,9 +56,17 @@ export async function fetchProfile(id: string): Promise<Profile | null> {
 }
 
 export async function fetchFinds(id: string): Promise<Find[]> {
-  const { data, error } = await assertDb().from('collection').select('word,first_found_at,find_count').eq('user_id', id).order('first_found_at', { ascending: false })
-  if (error) throw error
-  return data ?? []
+  const finds: Find[] = []
+  const pageSize = 1000
+  for (let start = 0; ; start += pageSize) {
+    const { data, error } = await assertDb().from('collection')
+      .select('word,first_found_at,find_count').eq('user_id', id)
+      .order('first_found_at', { ascending: false }).order('word', { ascending: true })
+      .range(start, start + pageSize - 1)
+    if (error) throw error
+    finds.push(...(data ?? []))
+    if (!data || data.length < pageSize) return finds
+  }
 }
 
 export async function fetchCommunity(): Promise<Profile[]> {

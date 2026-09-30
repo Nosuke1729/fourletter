@@ -3,7 +3,7 @@
 create schema if not exists private;
 
 create table if not exists public.words (
-  word text primary key check (char_length(word) = 4 and word ~ '^[ぁ-ん]{4}$'),
+  word text primary key check (char_length(word) = 4 and word ~ '^[ぁ-ゖ]{4}$'),
   label text not null,
   category text not null,
   description text not null,

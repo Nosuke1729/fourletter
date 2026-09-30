@@ -7,7 +7,9 @@
     "dev": "vite --host 0.0.0.0",
     "build": "tsc -b && vite build",
     "preview": "vite preview --host 0.0.0.0",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "update:dictionary": "bash scripts/update_dictionary.sh",
+    "export:dictionary-sql": "python3 scripts/export_catalog_sql.py"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.58.0",

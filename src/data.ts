@@ -4,6 +4,8 @@ export type Word = {
   category: string
   description: string
   source_url: string
+  source_name?: string
+  entry_id?: string
 }
 
 // Start with headwords visible in public pages showing Kōjien examples.
