@@ -6,4 +6,4 @@ Changes made here: readings were restricted to exactly four hiragana characters;
 
 The 11 hand-checked Kōjien examples in `src/data.ts` are separate editorial additions. The app does not claim that every JMdict entry is in Kōjien. Kōjien dictionary text is not included.
 
-EDRDG requires a regular update procedure. Run `npm run update:dictionary` monthly, inspect the generated diff, publish the site, and update the Supabase catalog from the same snapshot. Keep attribution and this license with any redistributed catalog.
+EDRDG requires a regular update procedure. Run `npm run update:dictionary` monthly, inspect the generated diff, publish the site, and update the Firebase catalog from the same snapshot. Keep attribution and this license with any redistributed catalog.

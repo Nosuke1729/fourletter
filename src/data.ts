@@ -44,12 +44,18 @@ export const starterWords: Word[] = [
 
 export const kana = Array.from('あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわをん')
 
-export function randomKana() {
-  return kana[Math.floor(Math.random() * kana.length)]
+function randomIndex(length: number) {
+  const ceiling = Math.floor(0x100000000 / length) * length
+  const value = new Uint32Array(1)
+  do { crypto.getRandomValues(value) } while (value[0] >= ceiling)
+  return value[0] % length
 }
 
+export function randomKana() { return kana[randomIndex(kana.length)] }
+
+
 export function makeDemoSpin(words: Word[]) {
-  const hit = Math.random() < 0.32 ? words[Math.floor(Math.random() * words.length)] : null
+  const hit = randomIndex(100) < 32 ? words[randomIndex(words.length)] : null
   const letters = hit ? Array.from(hit.word) : Array.from({ length: 4 }, randomKana)
   const word = words.find((item) => item.word === letters.join('')) ?? null
   return { letters, word }

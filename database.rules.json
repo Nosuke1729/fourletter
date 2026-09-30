@@ -1,0 +1,66 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "catalog": {
+      ".read": false,
+      ".write": false
+    },
+    "profiles": {
+      ".indexOn": [
+        "collection_count"
+      ],
+      ".read": "query.orderByChild === 'collection_count' && query.limitToLast != null && query.limitToLast <= 100",
+      "$uid": {
+        ".read": true,
+        ".write": "auth != null && auth.uid === $uid && newData.exists()",
+        ".validate": "newData.hasChildren(['display_name', 'total_spins', 'collection_count', 'favorite_word', 'created_at', 'last_result', 'last_spin_at']) && ((!data.exists() && newData.child('total_spins').val() === 0 && newData.child('collection_count').val() === 0 && newData.child('favorite_word').val() === '' && newData.child('created_at').val() === now && newData.child('last_result').val() === '' && newData.child('last_spin_at').val() === 0) || (data.exists() && newData.child('created_at').val() === data.child('created_at').val() && newData.child('total_spins').val() === data.child('total_spins').val() && newData.child('collection_count').val() === data.child('collection_count').val() && newData.child('last_result').val() === data.child('last_result').val() && newData.child('last_spin_at').val() === data.child('last_spin_at').val() && (newData.child('favorite_word').val() === '' || root.child('collections').child($uid).child(newData.child('favorite_word').val()).exists())) || (data.exists() && newData.child('created_at').val() === data.child('created_at').val() && newData.child('display_name').val() === data.child('display_name').val() && newData.child('favorite_word').val() === data.child('favorite_word').val() && newData.child('total_spins').val() === data.child('total_spins').val() + 1 && newData.child('last_spin_at').val() === now && now >= data.child('last_spin_at').val() + 500 && newData.child('last_result').val().matches(/^[ぁ-ゖ]{4}$/) && newData.child('collection_count').val() === data.child('collection_count').val() + ((root.child('catalog').child(newData.child('last_result').val()).val() === true && !root.child('collections').child($uid).child(newData.child('last_result').val()).exists()) ? 1 : 0) && (!(root.child('catalog').child(newData.child('last_result').val()).val() === true) || (newData.parent().parent().child('collections').child($uid).child(newData.child('last_result').val()).child('find_count').val() === (root.child('collections').child($uid).child(newData.child('last_result').val()).exists() ? root.child('collections').child($uid).child(newData.child('last_result').val()).child('find_count').val() + 1 : 1) && newData.parent().parent().child('collections').child($uid).child(newData.child('last_result').val()).child('last_found_at').val() === now))))",
+        "display_name": {
+          ".validate": "newData.isString() && newData.val().length >= 2 && newData.val().length <= 24"
+        },
+        "total_spins": {
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() % 1 === 0"
+        },
+        "collection_count": {
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() % 1 === 0 && newData.val() <= newData.parent().child('total_spins').val()"
+        },
+        "favorite_word": {
+          ".validate": "newData.isString() && (newData.val() === '' || newData.val().matches(/^[ぁ-ゖ]{4}$/))"
+        },
+        "created_at": {
+          ".validate": "newData.isNumber()"
+        },
+        "last_result": {
+          ".validate": "newData.isString()"
+        },
+        "last_spin_at": {
+          ".validate": "newData.isNumber()"
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
+    "collections": {
+      "$uid": {
+        ".read": true,
+        "$word": {
+          ".write": "auth != null && auth.uid === $uid && newData.exists()",
+          ".validate": "$word.matches(/^[ぁ-ゖ]{4}$/) && root.child('catalog').child($word).val() === true && newData.hasChildren(['first_found_at', 'last_found_at', 'find_count']) && newData.parent().parent().parent().child('profiles').child($uid).child('total_spins').val() === root.child('profiles').child($uid).child('total_spins').val() + 1 && newData.parent().parent().parent().child('profiles').child($uid).child('last_result').val() === $word && newData.parent().parent().parent().child('profiles').child($uid).child('last_spin_at').val() === now && newData.child('find_count').val() === (data.exists() ? data.child('find_count').val() + 1 : 1) && newData.child('first_found_at').val() === (data.exists() ? data.child('first_found_at').val() : now) && newData.child('last_found_at').val() === now",
+          "first_found_at": {
+            ".validate": "newData.isNumber()"
+          },
+          "last_found_at": {
+            ".validate": "newData.isNumber()"
+          },
+          "find_count": {
+            ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() % 1 === 0"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      }
+    }
+  }
+}
