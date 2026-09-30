@@ -48,6 +48,10 @@ a { color: inherit; }
 .machine:before { content: ""; position: absolute; pointer-events: none; z-index: -1; inset: 0; opacity: .6; background: linear-gradient(112deg, #33494326, transparent 29%, transparent 70%, #344e4121); }
 .machine-win { border-color: #a9e264; box-shadow: 0 0 0 1px #bffb5a7b, 0 0 90px #a5e8503d, 0 22px 70px #0009; animation: win-flash .75s ease-out; }
 @keyframes win-flash { 0% { filter: brightness(1.7); } 100% { filter: brightness(1); } }
+.win-burst { position: absolute; inset: 0; z-index: 5; pointer-events: none; overflow: hidden; }
+.win-burst i { position: absolute; top: 44%; left: 50%; width: 6px; height: 15px; border-radius: 3px; background: #d8ff91; box-shadow: 0 0 14px #bfff67; transform: rotate(var(--ray)) translateY(0) scale(0); animation: burst-ray .62s ease-out both; }
+.win-burst i:nth-child(3n) { background: #fff9d6; height: 8px; width: 8px; }
+@keyframes burst-ray { 15% { opacity: 1; transform: rotate(var(--ray)) translateY(-38px) scale(1); } 100% { opacity: 0; transform: rotate(var(--ray)) translateY(-180px) scale(.25); } }
 .machine-top, .machine-intro { display: flex; justify-content: space-between; align-items: center; }
 .machine-title { color: #9aaa9e; font-size: 10px; font-weight: 900; letter-spacing: .22em; display: flex; align-items: center; gap: 9px; }
 .sound-button { border: 1px solid #35413f; color: #a5b2aa; background: #172020; width: 34px; height: 34px; border-radius: 5px; display: grid; place-items: center; }
@@ -68,6 +72,8 @@ a { color: inherit; }
 .reel-underline { display: none; }
 .result-area { min-height: 76px; margin: 17px 0 14px; padding: 15px; border: 1px solid #283b34; background: #131d1c; border-radius: 5px; display: flex; align-items: center; gap: 12px; color: #d6e1d7; }
 .result-area.success { background: #1b2c1a; border-color: #688d49; }
+.result-area.success strong { animation: result-enter .35s cubic-bezier(.2,1.5,.4,1) both; }
+@keyframes result-enter { from { opacity: 0; transform: translateY(8px) scale(.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
 .result-area > div { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
 .result-area strong { font-size: 10px; font-weight: 900; letter-spacing: .14em; color: #c6fa65; }
 .result-area strong span { letter-spacing: 0; font-size: 15px; color: #f4f8ef; }

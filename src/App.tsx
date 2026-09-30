@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type FormEvent } from 'react'
 import type { User } from '@supabase/supabase-js'
 import { ArrowLeft, ArrowRight, BookOpen, Check, ChevronRight, CircleHelp, Copy, Heart, LockKeyhole, LogOut, Menu, RotateCcw, Sparkles, UserRound, Users, Volume2, VolumeX, X } from 'lucide-react'
 import { makeDemoSpin, randomKana, starterWords, type Word } from './data'
@@ -148,6 +148,7 @@ export default function App() {
   async function spin() {
     if (busyRef.current) return
     busyRef.current = true
+    blip(280)
     setSpinning(true)
     setOutcome(null)
     setStopped([false, false, false, false])
@@ -281,6 +282,7 @@ export default function App() {
         <section className="hero-grid">
           <div className="hero-copy"><div className="eyebrow">FOUR LETTER SLOT <span>/</span> 2026</div><h1>四文字が、<br /><span>揃う瞬間。</span></h1><p>ひらがなを4つ、順に止める。<br />辞書にある語が揃えば、あなたの図鑑へ。</p><div className="hero-subline"><span />{words.length.toLocaleString('ja-JP')} WORDS IN PLAY</div></div>
           <div className="machine-wrap"><div className={`machine ${outcome?.word ? 'machine-win' : ''}`}>
+            {outcome?.word && <div className="win-burst" aria-hidden="true">{Array.from({ length: 12 }, (_, index) => <i key={index} style={{ '--ray': `${index * 30}deg` } as CSSProperties} />)}</div>}
             <div className="machine-top"><span className="machine-title"><span className="live-dot" /> 01 / FOUR REELS</span><button className="sound-button" onClick={() => setSound(!sound)} aria-label={sound ? '音を消す' : '音を出す'}>{sound ? <Volume2 size={18} /> : <VolumeX size={18} />}</button></div>
             <div className="machine-intro"><span>{spinning ? 'ROLLING' : outcome?.word ? 'WORD FOUND' : 'READY TO SPIN'}</span><span className="machine-intro-line" /><span>YOMOJI</span></div>
             <div className="reel-frame" aria-label={`現在の文字 ${reels.join('')}`}>{reels.map((letter, index) => <div key={index} className={`reel ${spinning && !stopped[index] ? 'rolling' : ''} ${stopped[index] ? 'stopped' : ''}`}><span className="reel-number">0{index + 1}</span><span className="reel-letter">{letter}</span><span className="reel-underline" /></div>)}</div>
