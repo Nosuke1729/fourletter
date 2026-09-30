@@ -31,13 +31,13 @@ def main() -> None:
         statement = (
             "-- JMdict-derived data; see DICTIONARY-LICENSE.md.\n"
             "begin;\n"
-            "insert into public.words (word, label, category, description, source_url) values\n"
+            "insert into public.fourletter_words (word, label, category, description, source_url) values\n"
             + ",\n".join(values)
             + "\non conflict (word) do update set\n"
             "  label = excluded.label,\n"
             "  category = excluded.category,\n"
             "  description = excluded.description\n"
-            "where public.words.source_url = " + literal(SOURCE_URL) + ";\n"
+            "where public.fourletter_words.source_url = " + literal(SOURCE_URL) + ";\n"
             "commit;\n"
         )
         (output_dir / f"catalog-{batch_index:03d}.sql").write_text(statement)

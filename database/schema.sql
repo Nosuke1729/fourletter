@@ -1,8 +1,8 @@
--- Run once in the dedicated fourletter Supabase project.
+-- Run once in the selected Supabase project. Names are scoped to fourletter.
 -- Only short headwords and original descriptions are stored, not dictionary text.
 create schema if not exists private;
 
-create table if not exists public.words (
+create table if not exists public.fourletter_words (
   word text primary key check (char_length(word) = 4 and word ~ '^[ぁ-ゖ]{4}$'),
   label text not null,
   category text not null,
@@ -10,47 +10,48 @@ create table if not exists public.words (
   source_url text not null
 );
 
-create table if not exists public.profiles (
+create table if not exists public.fourletter_profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   display_name text not null default 'ことば好き' check (char_length(display_name) between 2 and 24),
   total_spins integer not null default 0 check (total_spins >= 0),
   collection_count integer not null default 0 check (collection_count >= 0),
-  favorite_word text references public.words(word),
+  favorite_word text references public.fourletter_words(word),
   created_at timestamptz not null default now()
 );
 
-create table if not exists public.collection (
-  user_id uuid not null references public.profiles(id) on delete cascade,
-  word text not null references public.words(word),
+create table if not exists public.fourletter_collection (
+  user_id uuid not null references public.fourletter_profiles(id) on delete cascade,
+  word text not null references public.fourletter_words(word),
   first_found_at timestamptz not null default now(),
   find_count integer not null default 1 check (find_count > 0),
   primary key (user_id, word)
 );
 
-create index if not exists profiles_leaderboard on public.profiles (collection_count desc, total_spins desc);
+create index if not exists fourletter_profiles_leaderboard on public.fourletter_profiles (collection_count desc, total_spins desc);
 
-alter table public.words enable row level security;
-alter table public.profiles enable row level security;
-alter table public.collection enable row level security;
+alter table public.fourletter_words enable row level security;
+alter table public.fourletter_profiles enable row level security;
+alter table public.fourletter_collection enable row level security;
 
-revoke all on public.words, public.profiles, public.collection from public, anon, authenticated;
-grant select on public.words, public.profiles, public.collection to anon, authenticated;
-grant update (display_name) on public.profiles to authenticated;
+revoke all on public.fourletter_words, public.fourletter_profiles, public.fourletter_collection from public, anon, authenticated;
+grant select on public.fourletter_words, public.fourletter_profiles, public.fourletter_collection to anon, authenticated;
+grant update (display_name) on public.fourletter_profiles to authenticated;
 
-create policy "word catalog is public" on public.words for select to anon, authenticated using (true);
-create policy "profiles are public" on public.profiles for select to anon, authenticated using (true);
-create policy "owner can rename" on public.profiles for update to authenticated
+create policy "word catalog is public" on public.fourletter_words for select to anon, authenticated using (true);
+create policy "profiles are public" on public.fourletter_profiles for select to anon, authenticated using (true);
+create policy "owner can rename" on public.fourletter_profiles for update to authenticated
   using ((select auth.uid()) = id) with check ((select auth.uid()) = id);
-create policy "collections are public" on public.collection for select to anon, authenticated using (true);
+create policy "collections are public" on public.fourletter_collection for select to anon, authenticated using (true);
 
 -- Auth trigger creates the public profile. Metadata supplies a display name only.
-create or replace function private.create_profile()
+create or replace function private.fourletter_create_profile()
 returns trigger language plpgsql security definer set search_path = '' as $$
 declare supplied_name text;
 begin
+  if new.raw_user_meta_data ->> 'fourletter_player' is distinct from 'true' then return new; end if;
   supplied_name := trim(coalesce(new.raw_user_meta_data ->> 'display_name', ''));
   if char_length(supplied_name) not between 2 and 24 then supplied_name := 'ことば好き'; end if;
-  insert into public.profiles(id, display_name) values (new.id, supplied_name)
+  insert into public.fourletter_profiles(id, display_name) values (new.id, supplied_name)
   on conflict (id) do nothing;
   return new;
 end;
@@ -58,11 +59,11 @@ $$;
 
 drop trigger if exists on_auth_user_created_fourletter on auth.users;
 create trigger on_auth_user_created_fourletter after insert on auth.users
-for each row execute function private.create_profile();
+for each row execute function private.fourletter_create_profile();
 
 -- The public wrapper is invoker-rights. The privileged operation lives in a
 -- non-exposed schema, checks the caller, and accepts no client-supplied result.
-create or replace function private.perform_spin()
+create or replace function private.fourletter_perform_spin()
 returns jsonb language plpgsql security definer set search_path = '' as $$
 declare
   player_id uuid := auth.uid();
@@ -75,10 +76,10 @@ declare
 begin
   if player_id is null then raise exception 'ログインしてください' using errcode = '28000'; end if;
   perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtext(player_id::text));
-  insert into public.profiles (id) values (player_id) on conflict do nothing;
+  insert into public.fourletter_profiles (id) values (player_id) on conflict do nothing;
 
   if pg_catalog.random() < 0.32 then
-    select w.word into result_text from public.words w order by pg_catalog.random() limit 1;
+    select w.word into result_text from public.fourletter_words w order by pg_catalog.random() limit 1;
   end if;
   if result_text is null then
     result_text := '';
@@ -87,16 +88,16 @@ begin
     end loop;
   end if;
 
-  select w.word into matched_word from public.words w where w.word = result_text;
+  select w.word into matched_word from public.fourletter_words w where w.word = result_text;
   if matched_word is not null then
     select not exists (
-      select 1 from public.collection c where c.user_id = player_id and c.word = matched_word
+      select 1 from public.fourletter_collection c where c.user_id = player_id and c.word = matched_word
     ) into new_word;
-    insert into public.collection (user_id, word) values (player_id, matched_word)
-    on conflict (user_id, word) do update set find_count = public.collection.find_count + 1;
+    insert into public.fourletter_collection (user_id, word) values (player_id, matched_word)
+    on conflict (user_id, word) do update set find_count = public.fourletter_collection.find_count + 1;
   end if;
 
-  update public.profiles
+  update public.fourletter_profiles
   set total_spins = total_spins + 1,
       collection_count = collection_count + case when new_word then 1 else 0 end
   where id = player_id
@@ -115,38 +116,38 @@ $$;
 
 create or replace function public.spin_four_letters()
 returns jsonb language sql security invoker set search_path = '' as $$
-  select private.perform_spin();
+  select private.fourletter_perform_spin();
 $$;
 
-create or replace function private.choose_favorite(chosen_word text)
+create or replace function private.fourletter_choose_favorite(chosen_word text)
 returns void language plpgsql security definer set search_path = '' as $$
 declare player_id uuid := auth.uid();
 begin
   if player_id is null then raise exception 'ログインしてください' using errcode = '28000'; end if;
   if chosen_word is not null and not exists (
-    select 1 from public.collection c where c.user_id = player_id and c.word = chosen_word
+    select 1 from public.fourletter_collection c where c.user_id = player_id and c.word = chosen_word
   ) then raise exception '図鑑にないことばは選べません'; end if;
-  update public.profiles set favorite_word = chosen_word where id = player_id;
+  update public.fourletter_profiles set favorite_word = chosen_word where id = player_id;
 end;
 $$;
 
-create or replace function public.set_favorite_word(chosen_word text)
+create or replace function public.fourletter_set_favorite_word(chosen_word text)
 returns void language sql security invoker set search_path = '' as $$
-  select private.choose_favorite(chosen_word);
+  select private.fourletter_choose_favorite(chosen_word);
 $$;
 
-revoke all on function private.create_profile() from public, anon, authenticated;
-revoke all on function private.perform_spin() from public, anon, authenticated;
-revoke all on function private.choose_favorite(text) from public, anon, authenticated;
+revoke all on function private.fourletter_create_profile() from public, anon, authenticated;
+revoke all on function private.fourletter_perform_spin() from public, anon, authenticated;
+revoke all on function private.fourletter_choose_favorite(text) from public, anon, authenticated;
 revoke all on function public.spin_four_letters() from public, anon, authenticated;
-revoke all on function public.set_favorite_word(text) from public, anon, authenticated;
+revoke all on function public.fourletter_set_favorite_word(text) from public, anon, authenticated;
 grant usage on schema private to authenticated;
-grant execute on function private.perform_spin() to authenticated;
-grant execute on function private.choose_favorite(text) to authenticated;
+grant execute on function private.fourletter_perform_spin() to authenticated;
+grant execute on function private.fourletter_choose_favorite(text) to authenticated;
 grant execute on function public.spin_four_letters() to authenticated;
-grant execute on function public.set_favorite_word(text) to authenticated;
+grant execute on function public.fourletter_set_favorite_word(text) to authenticated;
 
-insert into public.words (word, label, category, description, source_url) values
+insert into public.fourletter_words (word, label, category, description, source_url) values
   ('あさがお', '朝顔', 'しょくぶつ', '朝に花が開く、夏になじみのある植物。', 'https://www.casio.com/jp/exword/student/junior-high-school/features/search/'),
   ('ひまわり', '向日葵', 'しょくぶつ', '太陽を思わせる、大きな黄色い花。', 'https://www.sharp.co.jp/support/dictionary/doc/pwa8200_mn.pdf'),
   ('おおかみ', '狼', 'いきもの', '群れで暮らす、犬に近い野生の動物。', 'https://kojien.iwanami.co.jp/feature/'),

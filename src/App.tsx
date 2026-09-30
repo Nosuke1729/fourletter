@@ -203,7 +203,7 @@ export default function App() {
     setAuthBusy(true)
     try {
       if (authMode === 'signup') {
-        const { data, error } = await supabase.auth.signUp({ email, password, options: { data: { display_name: name.trim() || 'ことば好き' }, emailRedirectTo: window.location.origin + import.meta.env.BASE_URL } })
+        const { data, error } = await supabase.auth.signUp({ email, password, options: { data: { display_name: name.trim() || 'ことば好き', fourletter_player: true }, emailRedirectTo: window.location.origin + import.meta.env.BASE_URL } })
         if (error) throw error
         setAuthOpen(false)
         setMessage(data.session ? '登録できました。ようこそ！' : '確認メールを送りました。メールのリンクから登録を完了してください。')

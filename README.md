@@ -13,7 +13,7 @@ Supabase の設定がない場合はゲスト用のおためし版として動�
 
 ## Supabase
 
-1. 専用プロジェクトで [`database/schema.sql`](database/schema.sql) を適用します。
+1. 選んだプロジェクトで [`database/schema.sql`](database/schema.sql) を適用します。
 2. `npm run export:dictionary-sql` で `public/catalog.json` から SQL を生成し、表示されたディレクトリ内の `catalog-001.sql` から番号順に適用します。スキーマ内の広辞苑確認例11語は保持されます。
 3. プロジェクトの URL と **publishable key** を `VITE_SUPABASE_URL` / `VITE_SUPABASE_PUBLISHABLE_KEY` に設定します。`service_role` や secret key はブラウザーに渡さないでください。
 4. Auth の URL Configuration で Site URL と Redirect URLs に `https://nosuke1729.github.io/fourletter/` を追加します。ローカルでメール確認を試す場合は `http://localhost:5173/fourletter/` も追加します。

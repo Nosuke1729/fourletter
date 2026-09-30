@@ -50,7 +50,7 @@ export async function fetchWords(): Promise<Word[]> {
 }
 
 export async function fetchProfile(id: string): Promise<Profile | null> {
-  const { data, error } = await assertDb().from('profiles').select('*').eq('id', id).maybeSingle()
+  const { data, error } = await assertDb().from('fourletter_profiles').select('*').eq('id', id).maybeSingle()
   if (error) throw error
   return data
 }
@@ -59,7 +59,7 @@ export async function fetchFinds(id: string): Promise<Find[]> {
   const finds: Find[] = []
   const pageSize = 1000
   for (let start = 0; ; start += pageSize) {
-    const { data, error } = await assertDb().from('collection')
+    const { data, error } = await assertDb().from('fourletter_collection')
       .select('word,first_found_at,find_count').eq('user_id', id)
       .order('first_found_at', { ascending: false }).order('word', { ascending: true })
       .range(start, start + pageSize - 1)
@@ -70,7 +70,7 @@ export async function fetchFinds(id: string): Promise<Find[]> {
 }
 
 export async function fetchCommunity(): Promise<Profile[]> {
-  const { data, error } = await assertDb().from('profiles').select('*').order('collection_count', { ascending: false }).order('total_spins', { ascending: false }).limit(30)
+  const { data, error } = await assertDb().from('fourletter_profiles').select('*').order('collection_count', { ascending: false }).order('total_spins', { ascending: false }).limit(30)
   if (error) throw error
   return data ?? []
 }
@@ -82,11 +82,11 @@ export async function spinOnline(): Promise<SpinResult> {
 }
 
 export async function setFavorite(word: string | null) {
-  const { error } = await assertDb().rpc('set_favorite_word', { chosen_word: word })
+  const { error } = await assertDb().rpc('fourletter_set_favorite_word', { chosen_word: word })
   if (error) throw error
 }
 
 export async function updateName(user: User, displayName: string) {
-  const { error } = await assertDb().from('profiles').update({ display_name: displayName }).eq('id', user.id)
+  const { error } = await assertDb().from('fourletter_profiles').update({ display_name: displayName }).eq('id', user.id)
   if (error) throw error
 }
